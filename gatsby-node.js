@@ -2,6 +2,9 @@ const path = require(`path`)
 const fs = require(`fs`)
 const { createFilePath } = require(`gatsby-source-filesystem`)
 
+
+
+
 exports.onPreBootstrap = ({ reporter }, options) => {
   const contentPath = options.contentPath
   if (!fs.existsSync(contentPath)) {
@@ -34,7 +37,29 @@ exports.createPages = async ({ actions, graphql, reporter }) => {
     component: require.resolve("./src/templates/landing.js"),
   })
   
-  const blogPost = path.resolve(`./src/templates/post.js`)
+  
+  
+  // stop creating page while there were no markdown files found
+  const rtn = await graphql(
+    `
+    {
+      allMarkdownRemark {
+        totalCount
+      }
+    }
+    
+    `
+  )
+  
+  if (rtn.data.allMarkdownRemark.totalCount == 0) {
+    console.log(`no markdwon article found`)
+    return
+  }
+  //TODO:
+  //even if there's no markdown files at all,
+  //the brillant gatsby will still do the query in the templates, not from below
+  //dont know why...
+  const blogPost = require.resolve(`./src/templates/post.js`)
   const result = await graphql(
     `
       {
@@ -63,7 +88,7 @@ exports.createPages = async ({ actions, graphql, reporter }) => {
 
   // Create blog posts pages.
   const posts = result.data.allMarkdownRemark.edges
-
+  
   posts.forEach((post, index) => {
     const previous = index === posts.length - 1 ? null : posts[index + 1].node
     const next = index === 0 ? null : posts[index - 1].node
